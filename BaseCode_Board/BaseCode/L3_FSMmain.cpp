@@ -15,10 +15,10 @@ static uint8_t main_state = L3STATE_IDLE; //protocol state
 static uint8_t prev_state = main_state;
 
 //SDU (input)
-static uint8_t originalWord[200];
-static uint8_t wordLen=0;
+static char originalWord[200];
+static char wordLen=0;
 
-static uint8_t sdu[200];
+static char sdu[200];
 
 //serial port interface
 static Serial pc(USBTX, USBRX);
@@ -28,12 +28,12 @@ static Serial pc(USBTX, USBRX);
 static void L3service_processInputWord(void)
 {
     char c = pc.getc();
-    if (!L3_event_checkEventFlag(L3_event_dataToSend))
+    if (!L3_event_checkEventFlag(L3_event_reqToSend))
     {
         if (c == '\n' || c == '\r')
         {
             originalWord[wordLen++] = '\0';
-            L3_event_setEventFlag(L3_event_dataToSend);
+            L3_event_setEventFlag(L3_event_reqToSend);
             debug_if(DBGMSG_L3,"word is ready! ::: %s\n", originalWord);
         }
         else
@@ -71,48 +71,96 @@ void L3_FSMrun(void)
     switch (main_state)
     {
         case L3STATE_IDLE: //IDLE state description
+            //qualitification request(A) -> send req_pdu & start res_timer
+
+            if (L3_event_checkEventFlag(L3_event_reqToSend)) 
+            {
+                //msg header setting 
+                // strcpy((char*)sdu, "0Q");
+                sdu = L3_msg_encodeData('Q',sizeof(sdu),0); //request qualitification
+                L3_LLI_dataReqFunc(sdu, wordLen); //sdu(received data), length, type
+
+                debug_if(DBGMSG_L3, "[L3] sending msg....\n");
+
+                //msg sending
             
-            if (L3_event_checkEventFlag(L3_event_msgRcvd)) //if data reception event happens
-            {
-                //Retrieving data info.
-                uint8_t* dataPtr = L3_LLI_getMsgPtr();
-                uint8_t size = L3_LLI_getSize();
-
-                debug("\n -------------------------------------------------\nRCVD MSG : %s (length:%i)\n -------------------------------------------------\n", 
-                            dataPtr, size);
-                
-                pc.printf("Give a word to send : ");
-                
-                L3_event_clearEventFlag(L3_event_msgRcvd);
-            }
-            else if (L3_event_checkEventFlag(L3_event_dataToSend)) //if data needs to be sent (keyboard input)
-            {
-#ifdef ENABLE_CHANGEIDCMD
-                if (strncmp((const char*)originalWord, "changeID: ",9) == 0)
-                {
-                    uint8_t myid = originalWord[9] - '0';
-                    debug("[L3] requesting to change to srce id %i\n", myid);
-                    L3_LLI_configReqFunc(L2L3_CFGTYPE_SRCID, myid);
-                }
-                else
-#endif
-                {
-                    //msg header setting
-                    strcpy((char*)sdu, (char*)originalWord);
-                    L3_LLI_dataReqFunc(sdu, wordLen);
-
-                    debug_if(DBGMSG_L3, "[L3] sending msg....\n");
-                }
-                
                 wordLen = 0;
 
                 pc.printf("Give a word to send : ");
 
-                L3_event_clearEventFlag(L3_event_dataToSend);
+                
+                //timer start
+                L3_timer_startTimer; //wait Arb's res
+                main_state = L3STATE_CONNECT;
+                L3_event_clearEventFlag(L3_event_reqToSend); 
             }
-            break;
+
+        
+        case L3STATE_CONNECT: //IDLE state description
+        //qualitification's res reiceived
+            if (L3_event_checkEventFlag(L3_event_resRcvd)) //if data reception event happens
+            {
+                //Retrieving data info.
+                char* dataPtr = L3_LLI_getMsgPtr();
+                char size = L3_LLI_getSize();
+
+                debug("\n -------------------------------------------------\nRCVD MSG : %s (length:%i)\n -------------------------------------------------\n", 
+                            dataPtr, size);
+                if(dataPtr[0] == 1 && L3_timer_getTimerStatus==1) {
+                    main_state = L3STATE_COMMUNICATE;
+                }
+                else { //rejected or time out
+                    L3_timer_stopTimer();
+                    main_state = L3STATE_IDLE;
+                }
+                                        
+                L3_event_clearEventFlag(L3_event_resRcvd); 
+                
+            } 
+
+
+        case L3STATE_COMMUNICATE: //IDLE state description
+        int msg_count=0;
+            //message sendS -> send msg_pdu & count msg
+            if (L3_event_checkEventFlag(L3_event_msgToSend)) //if data needs to be sent (keyboard input)
+            {
+                //msg header setting
+                // strcpy((char*)sdu, (char*)originalWord);
+                sdu = L3_msg_encodeData(originalWord,sizeof(originalWord)+1,2); //send message
+                L3_LLI_dataReqFunc(sdu, wordLen);
+
+                debug_if(DBGMSG_L3, "[L3] sending msg....\n");
+            
+                wordLen = 0;
+
+                pc.printf("Give a word to send : ");
+                msg_count++;
+                L3_event_clearEventFlag(L3_event_msgToSend);
+                if(msg_count >=10) L3_event_setEventFlag(L3_event_msgEnd);
+                
+                main_state = L3STATE_COMMUNICATE;
+                
+            }
+
+            // request release
+            if(L3_event_checkEventFlag(L3_event_msgEnd)){
+                sdu = L3_msg_encodeData('R',sizeof(sdu)+1,3); //send release request
+                L3_LLI_dataReqFunc(sdu, wordLen);
+                msg_count=0; //message count>=10 -> release
+                L3_event_clearEventFlag(L3_event_msgEnd);
+                main_state = L3STATE_IDLE;
+
+            }
+
+            if(L3_event_checkEventFlag(L3_event_release)){
+                msg_count =0;
+                L3_event_clearEventFlag(L3_event_release);
+                main_state = L3STATE_IDLE;
+
+            }
 
         default :
             break;
     }
 }
+
