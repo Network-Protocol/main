@@ -8,6 +8,7 @@
 
 //FSM state -------------------------------------------------
 #define L3STATE_IDLE                0
+#define L3STATE_COMMUNICATE         2
 
 
 //state variables
@@ -71,47 +72,80 @@ void L3_FSMrun(void)
     switch (main_state)
     {
         case L3STATE_IDLE: //IDLE state description
-            
-            if (L3_event_checkEventFlag(L3_event_msgRcvd)) //if data reception event happens
-            {
+            if (L3_event_checkEventFlag(L3_event_resRcvd)){
                 //Retrieving data info.
-                uint8_t* dataPtr = L3_LLI_getMsgPtr();
-                uint8_t size = L3_LLI_getSize();
+                char* dataPtr = L3_LLI_getMsgPtr();
+                char size = L3_LLI_getSize();
 
-                debug("\n -------------------------------------------------\nRCVD MSG : %s (length:%i)\n -------------------------------------------------\n", 
-                            dataPtr, size);
-                
-                pc.printf("Give a word to send : ");
-                
-                L3_event_clearEventFlag(L3_event_msgRcvd);
-            }
-            else if (L3_event_checkEventFlag(L3_event_dataToSend)) //if data needs to be sent (keyboard input)
-            {
-#ifdef ENABLE_CHANGEIDCMD
-                if (strncmp((const char*)originalWord, "changeID: ",9) == 0)
-                {
-                    uint8_t myid = originalWord[9] - '0';
-                    debug("[L3] requesting to change to srce id %i\n", myid);
-                    L3_LLI_configReqFunc(L2L3_CFGTYPE_SRCID, myid);
+                debug("\n -------------------------------------------------\nRCVD MSG : %s (length:%i)\n -------------------------------------------------\n", dataPtr, size);
+                if(dataPtr[0] == 0) {
+                    // if received message is "MSG_TYPE_QUA_REQ" --> change state to the "Communicate"
+                    sdu = L3_msg_encodeData('Q',2, 1); // reject에 대한 value=0이기 때문에, 0을 message로 전송함 type은 MSG_TYPE_MSG_SEND==2
+                    // L3_LLI_dataReqFunc(sdu, wordLen); // wordLen? --> sizeof(sdu)가 되어야하지않나?
+                    L3_LLI_dataReqFunc(sdu, sizeof(sdu)); // wordLen? --> sizeof(sdu)가 되어야하지않나?
+
+                    main_state = L3STATE_COMMUNICATE;
+                    //timer start
+                    L3_timer_startTimer(); //wait Arb's res
                 }
-                else
-#endif
-                {
+                L3_event_clearEventFlag(L3_event_resRcvd); 
+            }
+            else{
+                // What?
+            }
+        // In communication
+        case L3STATE_COMMUNICATE:
+            if (L3_event_checkEventFlag(L3_event_resRcvd)){
+                /*
+                #define MSG_TYPE_QUA_REQ 0
+                #define MSG_TYPE_QUA_RES 1
+                #define MSG_TYPE_MSG_SEND 2
+                #define MSG_TYPE_RLS_REQ 3
+                #define MSG_TYPE_QUA_RLS 4
+                #define MSG_TYPE_TIME_OUT 5
+                #define MSG_TYPE_NO_GROUP 6
+                #define MSG_TYPE_QUA_REJ 7
+                // 7을 추가하려면 L3_msg.cpp를 수정해야함...
+                
+                */
+                //Retrieving data info.
+                char* dataPtr = L3_LLI_getMsgPtr();
+                char size = L3_LLI_getSize();
+
+                char* _msg;
+
+                debug("\n -------------------------------------------------\nRCVD MSG : %s (length:%i)\n -------------------------------------------------\n", dataPtr, size);
+                if(dataPtr[0] == 0) { // MSG_TYPE_QUA_REQ
                     //msg header setting
-                    strcpy((char*)sdu, (char*)originalWord);
-                    L3_LLI_dataReqFunc(sdu, wordLen);
-
-                    debug_if(DBGMSG_L3, "[L3] sending msg....\n");
+                    // sdu = L3_msg_encodeData('0',2, 7); // reject에 대한 value=0이기 때문에, 0을 message로 전송함 type은 MSG_TYPE_MSG_SEND==2
+                    sdu = L3_msg_encodeData('Q',2, 0); // reject이려면, 값이 1만 아니면 되기때문에 그냥 0으로함. 
+                    // L3_LLI_dataReqFunc(sdu, wordLen); // wordLen? --> sizeof(sdu)가 되어야하지않나?
+                    L3_LLI_dataReqFunc(sdu, sizeof(sdu)); // wordLen? --> sizeof(sdu)가 되어야하지않나?
+                                    
+                    main_state = L3STATE_COMMUNICATE;
                 }
-                
-                wordLen = 0;
-
-                pc.printf("Give a word to send : ");
-
-                L3_event_clearEventFlag(L3_event_dataToSend);
+                else if(dataPtr[0] == 2) { // MSG_TYPE_QUA_REQ
+                    memcpy(&dataPtr[L3_MSG_OFFSET_DATA], _msg, (size-1)*sizeof(char))
+                    sdu = L3_msg_encodeData(_msg,sizeof(_msg)+1,2); //send message --> board 코드에 msg를 받는 코드가 추가되어야할 것 같음
+                    L3_LLI_dataReqFunc(sdu, sizeof(sdu));
+                    // Arb가 보드에게 메세지를 쏘긴할텐데, 메세지를 보낸 보드를 제외하고 메세지를 보내는지?
+                    // 여러명한테 동시에 보낸다면, 그런 process를 여기에서 처리해주는지 혹은 기계 내부 적으로 처리해주는지?
+                    main_state = L3STATE_COMMUNICATE;
+                }
+                else if(dataPtr[0] == 3|| dataPtr[0] == 5) { // MSG_TYPE_RLS_REQ  or MSG_TYPE_TIME_OUT 
+                    sdu = L3_msg_encodeData('R',2, 4); // reject에 대한 value=0이기 때문에, 0을 message로 전송함 type은 MSG_TYPE_MSG_SEND==2
+                    L3_LLI_dataReqFunc(sdu, sizeof(sdu));
+                    
+                    main_state = L3STATE_IDLE;
+                }
+                else { 
+                    // Nothing to do
+                }
+                L3_event_clearEventFlag(L3_event_resRcvd); 
             }
-            break;
-
+            else{
+                // what?
+            }
         default :
             break;
     }
