@@ -13,12 +13,12 @@
 #define MSG_TYPE_NO_GROUP 6
 */
 
-int L3_msg_checkIfData(uint8_t* msg)
-{
-    return (msg[L3_MSG_OFFSET_TYPE] == L3_MSG_TYPE_DATA);
-}
+// int L3_msg_checkIfData(uint8_t* msg)
+// {
+//     return (msg[L3_MSG_OFFSET_TYPE] == L3_MSG_TYPE_DATA);
+// }
 
-char* L3_msg_encodeData(char* msg_data, int len, int type)
+char L3_msg_encodeData(char* msg_data, int type)
 {
     // L3_MSG_OFFSET_TYPE=0
     // L3_MSG_OFFSET_TYPE=1
@@ -44,12 +44,12 @@ char* L3_msg_encodeData(char* msg_data, int len, int type)
         break;
     }
     
-    memcpy(&msg_data[L3_MSG_OFFSET_DATA], msg_data, len*sizeof(char));
+    memcpy(&msg_data[L3_MSG_OFFSET_DATA], msg_data, sizeof(msg_data));
 
-    return msg_data;
+    return *msg_data;
 }
 
-char L3_msg_getWord(char* msg)
-{
-    return &msg[L3_MSG_OFFSET_DATA];
-}
+// char L3_msg_getWord(char* msg)
+// {
+//     return &msg[L3_MSG_OFFSET_DATA];
+// }
