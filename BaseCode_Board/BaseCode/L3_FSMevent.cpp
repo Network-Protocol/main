@@ -1,7 +1,7 @@
 #include "mbed.h"
 #include "L3_FSMevent.h"
 
-static uint32_t eventFlag;
+static int eventFlag;
 
 
 void L3_event_setEventFlag(L3_event_e event)

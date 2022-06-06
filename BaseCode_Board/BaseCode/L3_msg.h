@@ -16,7 +16,7 @@
 #define L3_MSSG_MAX_SEQNUM  1024
 
 
-int L2_msg_checkIfData(uint8_t* msg);
-uint8_t L3_msg_encodeData(uint8_t* msg_data, uint8_t* data, int seq, int len);
-uint8_t L3_msg_getSeq(uint8_t* msg);
-uint8_t* L3_msg_getWord(uint8_t* msg);
+int L2_msg_checkIfData(char* msg);
+char L3_msg_encodeData(char* msg_data, int type);
+char L3_msg_getSeq(char* msg);
+char* L3_msg_getWord(char* msg);
