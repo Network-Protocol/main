@@ -18,7 +18,7 @@ static char prev_state = main_state;
 
 //SDU (input)
 static char originalWord[200];
-static char wordLen=0;
+static int wordLen=0;
 
 static char sdu[200];
 
@@ -35,7 +35,9 @@ static void L3service_processInputWord(void)
         if (c == '\n' || c == '\r')
         {
             originalWord[wordLen++] = '\0';
-            L3_event_setEventFlag(L3_event_reqToSend);
+            if (originalWord == "REQ_Q"){
+                L3_event_setEventFlag(L3_event_reqToSend);
+            } else L3_event_setEventFlag(L3_event_msgToSend);        
         }
         else
         {
@@ -75,8 +77,6 @@ void L3_FSMrun(void)
             if (L3_event_checkEventFlag(L3_event_reqToSend)) 
             {
                 //msg header setting 
-                // strcpy((char*)sdu, "0Q");
-                // sdu[0]=0;
                 L3_msg_encodeData(sdu, 0); //request qualitification
                 L3_LLI_dataReqFunc(sdu,sizeof(sdu)/sizeof(char)); //sdu(received data), length, type
 
@@ -102,7 +102,6 @@ void L3_FSMrun(void)
                 //Retrieving data info.
                 char* dataPtr = L3_LLI_getMsgPtr();
                 char size = L3_LLI_getSize();
-
                 
                 if(dataPtr[0] == 1 && L3_timer_getTimerStatus()==1) {
                     main_state = L3STATE_COMMUNICATE;
@@ -124,10 +123,14 @@ void L3_FSMrun(void)
             if (L3_event_checkEventFlag(L3_event_msgToSend)) //if data needs to be sent (keyboard input)
             {
                 //msg header setting
-                // strcpy((char*)sdu, (char*)originalWord);
-                L3_msg_encodeData(originalWord,2); //send message
+                //L3_msg_encodeData(sdu,originalWord,2); 
+                L3_msg_encodeMessage(sdu,originalWord,2); //send message
                 L3_LLI_dataReqFunc(sdu,sizeof(sdu)/sizeof(char));            
                 wordLen = 0;
+                // msg reset
+                for(int i=0; i< wordLen+1;i++){
+                    originalWord[i]=NULL;
+                }
                 msg_count++;
                 L3_event_clearEventFlag(L3_event_msgToSend);
                 if(msg_count >=10) L3_event_setEventFlag(L3_event_msgEnd);

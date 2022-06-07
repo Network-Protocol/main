@@ -18,38 +18,33 @@
 //     return (msg[L3_MSG_OFFSET_TYPE] == L3_MSG_TYPE_DATA);
 // }
 
-char L3_msg_encodeData(char* msg_data, int type)
+char L3_msg_encodeData(char* data, int type)
 {
     // L3_MSG_OFFSET_TYPE=0
     // L3_MSG_OFFSET_TYPE=1
     switch (type)
     {
     case 0:
-        msg_data[L3_MSG_OFFSET_TYPE] = MSG_TYPE_QUA_REQ;
-        break;
-    case 1:
-        msg_data[L3_MSG_OFFSET_TYPE] = MSG_TYPE_QUA_RES;
-        break;
-    case 2:
-        msg_data[L3_MSG_OFFSET_TYPE] = MSG_TYPE_MSG_SEND;
+        data[L3_MSG_OFFSET_TYPE] = MSG_TYPE_QUA_REQ;
+        memcpy(&data[L3_MSG_OFFSET_DATA],"REQ_QUA", sizeof(char)*7);
         break;
     case 3:
-        msg_data[L3_MSG_OFFSET_TYPE] = MSG_TYPE_RLS_REQ;
-        break;
-    case 4:
-        msg_data[L3_MSG_OFFSET_TYPE] = MSG_TYPE_QUA_RLS;
+        data[L3_MSG_OFFSET_TYPE] = MSG_TYPE_RLS_REQ;
+        memcpy(&data[L3_MSG_OFFSET_DATA],"REQ_RLS", sizeof(char)*7);
         break;
     
     default:
         break;
     }
     
-    memcpy(&msg_data[L3_MSG_OFFSET_DATA], msg_data, sizeof(msg_data));
-
-    return *msg_data;
+    return *data;
 }
 
-// char L3_msg_getWord(char* msg)
-// {
-//     return &msg[L3_MSG_OFFSET_DATA];
-// }
+char L3_msg_encodeData(char* data,char* msg_data, int type)
+{
+    
+    data[L3_MSG_OFFSET_TYPE] = MSG_TYPE_MSG_SEND;
+    memcpy(&msg_data[L3_MSG_OFFSET_DATA], msg_data, sizeof(msg_data));
+
+    return *data;
+}
