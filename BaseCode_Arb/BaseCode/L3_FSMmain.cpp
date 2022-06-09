@@ -35,15 +35,9 @@ static void L3service_processInputWord(void)
         {
             originalWord[wordLen++] = '\0';
             if (originalWord == "REQ_Q"){
-<<<<<<< Updated upstream
                 L3_event_setEventFlag(L3_event_dataToSend);    //질문
             } else L3_event_setEventFlag(L3_event_msgToSend);  //질문
 
-=======
-                L3_event_setEventFlag(L3_event_dataToSend);
-            } else L3_event_setEventFlag(L3_event_msgToSend);      
-            
->>>>>>> Stashed changes
             debug_if(DBGMSG_L3,"word is ready! ::: %s\n", originalWord);
         }
         else
@@ -82,11 +76,7 @@ void L3_FSMrun(void)
     {
         case L3STATE_IDLE: //IDLE state description
             if (L3_event_checkEventFlag(L3_event_reqRcvd)){
-<<<<<<< Updated upstream
                 
-=======
-                //Retrieving data info.
->>>>>>> Stashed changes
                  /*
                 #define MSG_TYPE_QUA_REQ 0
                 #define MSG_TYPE_QUA_RES 1
@@ -97,36 +87,6 @@ void L3_FSMrun(void)
                 #define MSG_TYPE_NO_GROUP 6
                 
                 */
-<<<<<<< Updated upstream
-=======
-                //Retrieving data info.
-                char* dataPtr = L3_LLI_getMsgPtr();
-                char size = L3_LLI_getSize();
-
-                char* _msg;
-
-                debug("\n -------------------------------------------------\nRCVD MSG : %s (length:%i)\n -------------------------------------------------\n", dataPtr, size);
-                if(dataPtr[0] == 0) { // MSG_TYPE_QUA_REQ
-                    //msg header setting
-                    // if received message is "MSG_TYPE_QUA_REQ" --> change state to the "Communicate"
-                    
-                    sdu = L3_msg_encodeData(sdu,1, 1); // permit에 대한 value=1이기 때문에, 1을 message로 전송함 type은 MSG_TYPE_QUA_RES 1
-                    //L3_msg_encodeData(sdu,originalWord,2); 
-                    //L3_msg_encodeMessage(sdu,originalWord,2); //send message
-                    L3_LLI_dataReqFunc(sdu, sizeof(sdu)); 
-
-                    main_state = L3STATE_COMMUNICATE;
-                    //timer start
-                    L3_timer_startTimer(); 
-                }
-                L3_event_clearEventFlag(L3_event_reqRcvd); 
-            }
-
-        // In communication
-        case L3STATE_COMMUNICATE:
-            if (L3_event_checkEventFlag(L3_event_reqRcvd)){
-              
->>>>>>> Stashed changes
                 //Retrieving data info.
                 char* dataPtr = L3_LLI_getMsgPtr();
                 char size = L3_LLI_getSize();
@@ -136,7 +96,6 @@ void L3_FSMrun(void)
                 debug("\n -------------------------------------------------\nRCVD MSG : %s (length:%i)\n -------------------------------------------------\n", dataPtr, size);
 
                 if(dataPtr[0] == 0) { // MSG_TYPE_QUA_REQ
-<<<<<<< Updated upstream
                     //msg header setting
                     // if received message is "MSG_TYPE_QUA_REQ" --> change state to the "Communicate"
                     L3_msg_encodeData(sdu, 1); // permit value=1 , type--> MSG_TYPE_QUA_RES==1 
@@ -161,14 +120,10 @@ void L3_FSMrun(void)
                 debug("\n -------------------------------------------------\nRCVD MSG : %s (length:%i)\n -------------------------------------------------\n", dataPtr, size);
                 if(dataPtr[0] == 0) { // MSG_TYPE_QUA_REQ
                     
-=======
-                                      
->>>>>>> Stashed changes
                     main_state = L3STATE_COMMUNICATE;// reject.
                 }
                 else if(dataPtr[0] == 2 && L3_event_checkEventFlag(L3_event_MSGRcvd)) { // MSG_TYPE_MSG_SEND && L3_event_MSGRcvd
                     memcpy(_msg, &dataPtr[L3_MSG_OFFSET_DATA], (size-1)*sizeof(char))
-<<<<<<< Updated upstream
                     //sdu = L3_msg_encodeData(_msg,sizeof(_msg)+1,2);  
                     L3_msg_encodeMessage(sdu,originalWord,2);//send message
                     L3_LLI_dataReqFunc(sdu, sizeof(sdu));
@@ -180,38 +135,18 @@ void L3_FSMrun(void)
                  else if(dataPtr[0] == 3 && L3_event_checkEventFlag(L3_event_RLSRcvd)) { // MSG_TYPE_RLS_REQ && L3_event_RLSRcvd
                     //sdu = L3_msg_encodeData(sdu,2, 4);
                     L3_msg_encodeData(sdu,4); //type-> MSG_TYPE_QUA_RLS==4
-=======
-                    sdu = L3_msg_encodeData(_msg,sizeof(_msg)+1,2); //send message 
-                    L3_LLI_dataReqFunc(sdu, sizeof(sdu));
-                    // if pdu type = 2 && current_board == data sended borad's number->arb send data to group
-                    // if arq_count>10(group is not exist or disconnected) -> act stop ->massage timer stop -> send PDU type = 6 to board 
-                    //  ->arb release
-                
-                    main_state = L3STATE_COMMUNICATE;
-                }
-                else if(dataPtr[0] == 3 && L3_event_checkEventFlag(L3_event_RLSRcvd)) { // MSG_TYPE_RLS_REQ && L3_event_RLSRcvd
-                    sdu = L3_msg_encodeData(sdu,2, 4); //  type-> MSG_TYPE_QUA_RLS==4
->>>>>>> Stashed changes
                     L3_LLI_dataReqFunc(sdu, sizeof(sdu));
                     
                     main_state = L3STATE_IDLE;
                 }
-<<<<<<< Updated upstream
                  else if(L3_event_checkEventFlag(L3_event_Timeout)){
                     L3_msg_encodeData(sdu,5); //type-> MSG_TYPE_TIME_OUT==5
                     L3_LLI_dataReqFunc(sdu, sizeof(sdu));
-=======
-                else if(L3_event_checkEventFlag(L3_event_Timeout)){
->>>>>>> Stashed changes
 
                     L3_event_clearEventFlag(L3_event_Timeout);
                     main_state = L3STATE_IDLE;
                 }
-<<<<<<< Updated upstream
                
-=======
-                
->>>>>>> Stashed changes
             }
         default :
             break;
