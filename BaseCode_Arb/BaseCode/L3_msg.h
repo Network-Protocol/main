@@ -1,4 +1,9 @@
 #include "mbed.h"
+<<<<<<< Updated upstream
+=======
+
+
+>>>>>>> Stashed changes
 #define MSG_TYPE_QUA_REQ 0
 #define MSG_TYPE_QUA_RES 1
 #define MSG_TYPE_MSG_SEND 2

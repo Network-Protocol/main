@@ -1,16 +1,26 @@
 #include "mbed.h"
 #include "L3_msg.h"
+<<<<<<< Updated upstream
 #include "mbed.h"
 #include "L3_msg.h"
+=======
+>>>>>>> Stashed changes
 #include "string.h"
 
 
 /*
 #define MSG_TYPE_QUA_REQ 0
+<<<<<<< Updated upstream
 #define MSG_TYPE_QUA_RES 1 //발언권 승인(value = 1) 거절(value =0)
 #define MSG_TYPE_MSG_SEND 2
 #define MSG_TYPE_RLS_REQ 3
 #define MSG_TYPE_QUA_RLS 4 //발언권 release 승인
+=======
+#define MSG_TYPE_QUA_RES 1
+#define MSG_TYPE_MSG_SEND 2
+#define MSG_TYPE_RLS_REQ 3
+#define MSG_TYPE_QUA_RLS 4
+>>>>>>> Stashed changes
 #define MSG_TYPE_TIME_OUT 5
 #define MSG_TYPE_NO_GROUP 6
 */
