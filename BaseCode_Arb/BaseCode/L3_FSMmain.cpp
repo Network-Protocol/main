@@ -28,7 +28,8 @@ static Serial pc(USBTX, USBRX);
 //application event handler : generating SDU from keyboard input
 static void L3service_processInputWord(void)
 {
-    char c = pc.getc();
+    /*
+  char c = pc.getc();
     if (!L3_event_checkEventFlag(L3_event_dataToSend))
     {
         if (c == '\n' || c == '\r')
@@ -51,6 +52,7 @@ static void L3service_processInputWord(void)
             }
         }
     }
+    */
 }
 
 
@@ -85,6 +87,7 @@ void L3_FSMrun(void)
                 #define MSG_TYPE_QUA_RLS 4
                 #define MSG_TYPE_TIME_OUT 5
                 #define MSG_TYPE_NO_GROUP 6
+                #define MSG_TYPE_REJECT 7
                 
                 */
                 //Retrieving data info.
@@ -120,8 +123,9 @@ void L3_FSMrun(void)
 
                 debug("\n -------------------------------------------------\nRCVD MSG : %s (length:%i)\n -------------------------------------------------\n", dataPtr, size);
                 if(dataPtr[0] == 0) { // MSG_TYPE_QUA_REQ
-                    
-                    main_state = L3STATE_COMMUNICATE;// reject.
+                    L3_msg_encodeData(sdu,7); //type-> MSG_TYPE_REJECT == 7
+                    L3_LLI_dataReqFunc(sdu, sizeof(sdu)/sizeof(char));
+                    main_state = L3STATE_COMMUNICATE;
                 }
                 else if(dataPtr[0] == 2 && L3_event_checkEventFlag(L3_event_MSGRcvd)) { // MSG_TYPE_MSG_SEND && L3_event_MSGRcvd
                     memcpy(_msg, &dataPtr[L3_MSG_OFFSET_DATA], (size-1)*sizeof(char))
@@ -133,9 +137,9 @@ void L3_FSMrun(void)
                     
                     // if arq_count>10(group is not exist or disconnected) -> act stop ->massage timer stop -> send PDU type = 6 to board ->arb release
                     
-                    L3_timer_stopTimer(); //massage timer stop
-                    L3_msg_encodeData(sdu, 6); //send PDU type = 6 to board
-                    L3_LLI_dataReqFunc(sdu, sizeof(sdu)/sizeof(char));
+                    //L3_timer_stopTimer(); //massage timer stop
+                    //L3_msg_encodeData(sdu, 6); //send PDU type = 6 to board
+                    //L3_LLI_dataReqFunc(sdu, sizeof(sdu)/sizeof(char));
 
                     main_state = L3STATE_COMMUNICATE; //arb release
                 }
@@ -143,7 +147,8 @@ void L3_FSMrun(void)
                     //sdu = L3_msg_encodeData(sdu,2, 4);
                     L3_msg_encodeData(sdu,4); //type-> MSG_TYPE_QUA_RLS==4
                     L3_LLI_dataReqFunc(sdu, sizeof(sdu)/sizeof(char));
-                    
+
+                    L3_event_clearEventFlag(L3_event_RLSRcvd);
                     main_state = L3STATE_IDLE;
                 }
                  else if(L3_event_checkEventFlag(L3_event_Timeout)){
