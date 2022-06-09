@@ -34,7 +34,10 @@ static void L3service_processInputWord(void)
         if (c == '\n' || c == '\r')
         {
             originalWord[wordLen++] = '\0';
-            L3_event_setEventFlag(L3_event_dataToSend);
+            if (originalWord == "REQ_Q"){
+                L3_event_setEventFlag(L3_event_dataToSend);    //질문
+            } else L3_event_setEventFlag(L3_event_msgToSend);  //질문
+
             debug_if(DBGMSG_L3,"word is ready! ::: %s\n", originalWord);
         }
         else
@@ -43,7 +46,7 @@ static void L3service_processInputWord(void)
             if (wordLen >= L3_MAXDATASIZE-1)
             {
                 originalWord[wordLen++] = '\0';
-                L3_event_setEventFlag(L3_event_dataToSend);
+                L3_event_setEventFlag(L3_event_dataToSend);  //질문
                 pc.printf("\n max reached! word forced to be ready :::: %s\n", originalWord);
             }
         }
@@ -72,31 +75,9 @@ void L3_FSMrun(void)
     switch (main_state)
     {
         case L3STATE_IDLE: //IDLE state description
-            if (L3_event_checkEventFlag(L3_event_resRcvd)){
-                //Retrieving data info.
-                char* dataPtr = L3_LLI_getMsgPtr();
-                char size = L3_LLI_getSize();
-
-                debug("\n -------------------------------------------------\nRCVD MSG : %s (length:%i)\n -------------------------------------------------\n", dataPtr, size);
-                if(dataPtr[0] == 0) {
-                    // if received message is "MSG_TYPE_QUA_REQ" --> change state to the "Communicate"
-                    sdu = L3_msg_encodeData('Q',2, 1); // reject에 대한 value=0이기 때문에, 0을 message로 전송함 type은 MSG_TYPE_MSG_SEND==2
-                    // L3_LLI_dataReqFunc(sdu, wordLen); // wordLen? --> sizeof(sdu)가 되어야하지않나?
-                    L3_LLI_dataReqFunc(sdu, sizeof(sdu)); // wordLen? --> sizeof(sdu)가 되어야하지않나?
-
-                    main_state = L3STATE_COMMUNICATE;
-                    //timer start
-                    L3_timer_startTimer(); //wait Arb's res
-                }
-                L3_event_clearEventFlag(L3_event_resRcvd); 
-            }
-            else{
-                // What?
-            }
-        // In communication
-        case L3STATE_COMMUNICATE:
-            if (L3_event_checkEventFlag(L3_event_resRcvd)){
-                /*
+            if (L3_event_checkEventFlag(L3_event_reqRcvd)){
+                
+                 /*
                 #define MSG_TYPE_QUA_REQ 0
                 #define MSG_TYPE_QUA_RES 1
                 #define MSG_TYPE_MSG_SEND 2
@@ -104,8 +85,6 @@ void L3_FSMrun(void)
                 #define MSG_TYPE_QUA_RLS 4
                 #define MSG_TYPE_TIME_OUT 5
                 #define MSG_TYPE_NO_GROUP 6
-                #define MSG_TYPE_QUA_REJ 7
-                // 7을 추가하려면 L3_msg.cpp를 수정해야함...
                 
                 */
                 //Retrieving data info.
@@ -115,36 +94,59 @@ void L3_FSMrun(void)
                 char* _msg;
 
                 debug("\n -------------------------------------------------\nRCVD MSG : %s (length:%i)\n -------------------------------------------------\n", dataPtr, size);
+
                 if(dataPtr[0] == 0) { // MSG_TYPE_QUA_REQ
                     //msg header setting
-                    // sdu = L3_msg_encodeData('0',2, 7); // reject에 대한 value=0이기 때문에, 0을 message로 전송함 type은 MSG_TYPE_MSG_SEND==2
-                    sdu = L3_msg_encodeData('Q',2, 0); // reject이려면, 값이 1만 아니면 되기때문에 그냥 0으로함. 
-                    // L3_LLI_dataReqFunc(sdu, wordLen); // wordLen? --> sizeof(sdu)가 되어야하지않나?
-                    L3_LLI_dataReqFunc(sdu, sizeof(sdu)); // wordLen? --> sizeof(sdu)가 되어야하지않나?
-                                    
+                    // if received message is "MSG_TYPE_QUA_REQ" --> change state to the "Communicate"
+                    L3_msg_encodeData(sdu, 1); // permit value=1 , type--> MSG_TYPE_QUA_RES==1 
+                    L3_LLI_dataReqFunc(sdu, sizeof(sdu)); 
                     main_state = L3STATE_COMMUNICATE;
+                    //timer start
+                    L3_timer_startTimer();
+                    L3_event_clearEventFlag(L3_event_reqRcvd); 
                 }
-                else if(dataPtr[0] == 2) { // MSG_TYPE_QUA_REQ
-                    memcpy(&dataPtr[L3_MSG_OFFSET_DATA], _msg, (size-1)*sizeof(char))
-                    sdu = L3_msg_encodeData(_msg,sizeof(_msg)+1,2); //send message --> board 코드에 msg를 받는 코드가 추가되어야할 것 같음
+                break;
+                
+            }
+        // In communication
+        case L3STATE_COMMUNICATE:
+            if (L3_event_checkEventFlag(L3_event_reqRcvd)){
+               
+                char* dataPtr = L3_LLI_getMsgPtr();
+                char size = L3_LLI_getSize();
+
+                char* _msg;
+
+                debug("\n -------------------------------------------------\nRCVD MSG : %s (length:%i)\n -------------------------------------------------\n", dataPtr, size);
+                if(dataPtr[0] == 0) { // MSG_TYPE_QUA_REQ
+                    
+                    main_state = L3STATE_COMMUNICATE;// reject.
+                }
+                else if(dataPtr[0] == 2 && L3_event_checkEventFlag(L3_event_MSGRcvd)) { // MSG_TYPE_MSG_SEND && L3_event_MSGRcvd
+                    memcpy(_msg, &dataPtr[L3_MSG_OFFSET_DATA], (size-1)*sizeof(char))
+                    //sdu = L3_msg_encodeData(_msg,sizeof(_msg)+1,2);  
+                    L3_msg_encodeMessage(sdu,originalWord,2);//send message
                     L3_LLI_dataReqFunc(sdu, sizeof(sdu));
-                    // Arb가 보드에게 메세지를 쏘긴할텐데, 메세지를 보낸 보드를 제외하고 메세지를 보내는지?
-                    // 여러명한테 동시에 보낸다면, 그런 process를 여기에서 처리해주는지 혹은 기계 내부 적으로 처리해주는지?
+                    //질문 if pdu type = 2 && current_board == data sended borad's number->arb send data to group
+                    // if arq_count>10(group is not exist or disconnected) -> act stop ->massage timer stop -> send PDU type = 6 to board 
+                    //  ->arb release
                     main_state = L3STATE_COMMUNICATE;
                 }
-                else if(dataPtr[0] == 3|| dataPtr[0] == 5) { // MSG_TYPE_RLS_REQ  or MSG_TYPE_TIME_OUT 
-                    sdu = L3_msg_encodeData('R',2, 4); // reject에 대한 value=0이기 때문에, 0을 message로 전송함 type은 MSG_TYPE_MSG_SEND==2
+                 else if(dataPtr[0] == 3 && L3_event_checkEventFlag(L3_event_RLSRcvd)) { // MSG_TYPE_RLS_REQ && L3_event_RLSRcvd
+                    //sdu = L3_msg_encodeData(sdu,2, 4);
+                    L3_msg_encodeData(sdu,4); //type-> MSG_TYPE_QUA_RLS==4
                     L3_LLI_dataReqFunc(sdu, sizeof(sdu));
                     
                     main_state = L3STATE_IDLE;
                 }
-                else { 
-                    // Nothing to do
+                 else if(L3_event_checkEventFlag(L3_event_Timeout)){
+                    L3_msg_encodeData(sdu,5); //type-> MSG_TYPE_TIME_OUT==5
+                    L3_LLI_dataReqFunc(sdu, sizeof(sdu));
+
+                    L3_event_clearEventFlag(L3_event_Timeout);
+                    main_state = L3STATE_IDLE;
                 }
-                L3_event_clearEventFlag(L3_event_resRcvd); 
-            }
-            else{
-                // what?
+               
             }
         default :
             break;
