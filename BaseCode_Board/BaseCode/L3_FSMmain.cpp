@@ -35,7 +35,7 @@ static void L3service_processInputWord(void)
         if (c == '\n' || c == '\r')
         {
             originalWord[wordLen++] = '\0';
-            if (originalWord == "REQ_Q"){
+            if (strncmp(originalWord,"REQ_Q",5) == 0){
                 L3_event_setEventFlag(L3_event_reqToSend);
             } else L3_event_setEventFlag(L3_event_msgToSend);        
         }
@@ -83,12 +83,9 @@ void L3_FSMrun(void)
                 //msg sending
             
                 wordLen = 0;
-
-                pc.printf("Give a word to send : ");
-
                 
                 //timer start
-                L3_timer_startTimer; //wait Arb's res
+                L3_timer_startTimer(); //wait Arb's res
                 main_state = L3STATE_CONNECT;
                 L3_event_clearEventFlag(L3_event_reqToSend); 
             }
@@ -103,7 +100,7 @@ void L3_FSMrun(void)
                 char* dataPtr = L3_LLI_getMsgPtr();
                 char size = L3_LLI_getSize();
                 
-                if(dataPtr[0] == 1 && L3_timer_getTimerStatus()==1) {
+                if(dataPtr[1] == 1 && L3_timer_getTimerStatus()==1) {
                     main_state = L3STATE_COMMUNICATE;
                 }
                 else { //rejected or time out
@@ -149,9 +146,9 @@ void L3_FSMrun(void)
 
             }
 
-            if(L3_event_checkEventFlag(L3_event_release)){
+            if(L3_event_checkEventFlag(L3_event_rls_req)){
                 msg_count =0;
-                L3_event_clearEventFlag(L3_event_release);
+                L3_event_clearEventFlag(L3_event_rls_req);
                 main_state = L3STATE_IDLE;
 
             }

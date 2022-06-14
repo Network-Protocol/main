@@ -1,7 +1,7 @@
 typedef enum L3_event
 {
     L3_event_reqToSend = 1, //A
-    L3_event_release =2, //B
+    L3_event_rls_req =2, //B
     L3_event_resRcvd = 3, //C Answer for Requst qualitification
     L3_event_msgToSend = 4, //D
     L3_event_msgEnd =5, //E message count>=10
