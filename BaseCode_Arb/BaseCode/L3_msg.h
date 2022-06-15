@@ -1,4 +1,5 @@
 #include "mbed.h"
+#include "L3_FSMevent.h"
 #define MSG_TYPE_QUA_REQ 0
 #define MSG_TYPE_QUA_RES 1
 #define MSG_TYPE_MSG_SEND 2
@@ -17,6 +18,8 @@
 
 int L2_msg_checkIfData(char* msg);
 char L3_msg_encodeData(char* data, int type);
+char L3_msg_encodeQual(char* data, int type, int state);
 char L3_msg_encodeMessage(char* data,char* msg_data, int type);
+L3_event_e L3_decode_EventFlag(char* data);
 char L3_msg_getSeq(char* msg);
 char* L3_msg_getWord(char* msg);

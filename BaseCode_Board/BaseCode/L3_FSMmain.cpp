@@ -100,7 +100,7 @@ void L3_FSMrun(void)
                 char* dataPtr = L3_LLI_getMsgPtr();
                 char size = L3_LLI_getSize();
                 
-                if(dataPtr[1] == 1 && L3_timer_getTimerStatus()==1) {
+                if(dataPtr[1] == '1' && L3_timer_getTimerStatus()==1) {
                     main_state = L3STATE_COMMUNICATE;
                 }
                 else { //rejected or time out
