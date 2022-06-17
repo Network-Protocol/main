@@ -18,7 +18,7 @@
 //     return (msg[L3_MSG_OFFSET_TYPE] == L3_MSG_TYPE_DATA);
 // }
 
-char L3_msg_encodeData(char* data, int type)
+uint8_t L3_msg_encodeData(uint8_t* data, int type)
 {
     // L3_MSG_OFFSET_TYPE=0
     // L3_MSG_OFFSET_TYPE=1
@@ -26,11 +26,11 @@ char L3_msg_encodeData(char* data, int type)
     {
     case 0:
         data[L3_MSG_OFFSET_TYPE] = MSG_TYPE_QUA_REQ;
-        memcpy(&data[L3_MSG_OFFSET_DATA],"REQ_QUA", sizeof(char)*7);
+        memcpy(&data[L3_MSG_OFFSET_DATA],"REQ_QUA", sizeof(uint8_t)*7);
         break;
     case 3:
         data[L3_MSG_OFFSET_TYPE] = MSG_TYPE_RLS_REQ;
-        memcpy(&data[L3_MSG_OFFSET_DATA],"REQ_RLS", sizeof(char)*7);
+        memcpy(&data[L3_MSG_OFFSET_DATA],"REQ_RLS", sizeof(uint8_t)*7);
         break;
     
     default:
@@ -40,7 +40,7 @@ char L3_msg_encodeData(char* data, int type)
     return *data;
 }
 
-char L3_msg_encodeData(char* data,char* msg_data, int type)
+uint8_t L3_msg_encodeMessage(uint8_t* data,uint8_t* msg_data, int type)
 {
     
     data[L3_MSG_OFFSET_TYPE] = MSG_TYPE_MSG_SEND;

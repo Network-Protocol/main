@@ -7,7 +7,7 @@
 #define MSG_TYPE_QUA_RLS 4
 #define MSG_TYPE_TIME_OUT 5
 #define MSG_TYPE_NO_GROUP 6
-#define MSG_TYPE_REJECT 7
+//#define MSG_TYPE_REJECT 7
 
 #define L3_MSG_OFFSET_TYPE  0
 #define L3_MSG_OFFSET_DATA  1
@@ -16,10 +16,11 @@
 #define L3_MSSG_MAX_SEQNUM  1024
 
 
-int L2_msg_checkIfData(char* msg);
-char L3_msg_encodeData(char* data, int type);
-char L3_msg_encodeQual(char* data, int type, int state);
-char L3_msg_encodeMessage(char* data,char* msg_data, int type);
-L3_event_e L3_decode_EventFlag(char* data);
-char L3_msg_getSeq(char* msg);
-char* L3_msg_getWord(char* msg);
+int L2_msg_checkIfData(uint8_t* msg);
+uint8_t L3_msg_encodeData(uint8_t* data, int type);
+uint8_t L3_msg_encodeQual(uint8_t* data, int type, int state);
+uint8_t L3_msg_encodeMessage(uint8_t* data,uint8_t* msg_data, int type);
+
+L3_event_e L3_decode_EventFlag(uint8_t* data);
+uint8_t L3_msg_getSeq(uint8_t* msg);
+uint8_t* L3_msg_getWord(uint8_t* msg);
