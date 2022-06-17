@@ -2,7 +2,6 @@
 #include "L3_msg.h"
 #include "string.h"
 
-
 /*
 #define MSG_TYPE_QUA_REQ 0
 #define MSG_TYPE_QUA_RES 1 //발언권 승인(value = 1) 거절(value =0)
@@ -18,12 +17,7 @@
 #define MSG_TYPE_NO_GROUP 6
 */
 
-// int L3_msg_checkIfData(uint8_t* msg)
-// {
-//     return (msg[L3_MSG_OFFSET_TYPE] == L3_MSG_TYPE_DATA);
-// }
-
-char L3_msg_encodeData(char* data, int type)
+uint8_t L3_msg_encodeData(uint8_t* data, int type)
 {
     // L3_MSG_OFFSET_TYPE=0
     // L3_MSG_OFFSET_TYPE=1
@@ -31,11 +25,11 @@ char L3_msg_encodeData(char* data, int type)
     {
     case 1:
         data[L3_MSG_OFFSET_TYPE] = MSG_TYPE_QUA_RES;
-        memcpy(&data[L3_MSG_OFFSET_DATA],"REQ_QUA", sizeof(char)*7);
+        memcpy(&data[L3_MSG_OFFSET_DATA],"REQ_QUA", sizeof(uint8_t)*7);
         break;
     case 4:
         data[L3_MSG_OFFSET_TYPE] = MSG_TYPE_QUA_RLS;
-        memcpy(&data[L3_MSG_OFFSET_DATA],"REQ_RLS", sizeof(char)*7);
+        memcpy(&data[L3_MSG_OFFSET_DATA],"REQ_RLS", sizeof(uint8_t)*7);
         break;
     
     default:
@@ -46,17 +40,17 @@ char L3_msg_encodeData(char* data, int type)
 }
 
 
-char L3_msg_encodeQual(char* data, int type, int state){
+uint8_t L3_msg_encodeQual(uint8_t* data, int type, int state){
     data[L3_MSG_OFFSET_TYPE] = MSG_TYPE_QUA_RES;
     if(state ==1) { //initial state, current board
-        memcpy(&data[L3_MSG_OFFSET_DATA],"1", sizeof(char));
+        memcpy(&data[L3_MSG_OFFSET_DATA],"1", sizeof(uint8_t));
     } else{
-        memcpy(&data[L3_MSG_OFFSET_DATA],"0", sizeof(char));
+        memcpy(&data[L3_MSG_OFFSET_DATA],"0", sizeof(uint8_t));
     }
     return *data;
 }
 
-char L3_msg_encodeMessage(char* data,char* msg_data, int type)
+uint8_t L3_msg_encodeMessage(uint8_t* data,uint8_t* msg_data, int type)
 {
     data[L3_MSG_OFFSET_TYPE] = MSG_TYPE_MSG_SEND;
     memcpy(&msg_data[L3_MSG_OFFSET_DATA], msg_data, sizeof(msg_data));
@@ -69,7 +63,7 @@ L3_event_reqRcvd =1, //A
     L3_event_RlsRcvd =3, //C
     L3_event_Timeout =4, //D
     */
-L3_event_e L3_decode_EventFlag(char* data)
+L3_event_e L3_decode_EventFlag(uint8_t* data)
 {
     L3_event_e event;
     switch (data[0])

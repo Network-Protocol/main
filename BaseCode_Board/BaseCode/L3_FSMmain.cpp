@@ -13,14 +13,14 @@
 
 
 //state variables
-static char main_state = L3STATE_IDLE; //protocol state
-static char prev_state = main_state;
+static uint8_t main_state = L3STATE_IDLE; //protocol state
+static uint8_t prev_state = main_state;
 
 //SDU (input)
-static char originalWord[200];
+static uint8_t originalWord[200];
 static int wordLen=0;
 
-static char sdu[200];
+static uint8_t sdu[200];
 
 //serial port interface
 static Serial pc(USBTX, USBRX);
@@ -35,7 +35,7 @@ static void L3service_processInputWord(void)
         if (c == '\n' || c == '\r')
         {
             originalWord[wordLen++] = '\0';
-            if (strncmp(originalWord,"REQ_Q",5) == 0){
+            if (strncmp((const char*)originalWord,"REQ_Q",5) == 0){
                 L3_event_setEventFlag(L3_event_reqToSend);
             } else L3_event_setEventFlag(L3_event_msgToSend);        
         }
@@ -78,7 +78,7 @@ void L3_FSMrun(void)
             {
                 //msg header setting 
                 L3_msg_encodeData(sdu, 0); //request qualitification
-                L3_LLI_dataReqFunc(sdu,sizeof(sdu)/sizeof(char)); //sdu(received data), length, type
+                L3_LLI_dataReqFunc(sdu,sizeof(sdu)/sizeof(uint8_t)); //sdu(received data), length, type
 
                 //msg sending
             
@@ -97,8 +97,8 @@ void L3_FSMrun(void)
             if (L3_event_checkEventFlag(L3_event_resRcvd)) //if data reception event happens
             {
                 //Retrieving data info.
-                char* dataPtr = L3_LLI_getMsgPtr();
-                char size = L3_LLI_getSize();
+                uint8_t* dataPtr = L3_LLI_getMsgPtr();
+                // uint8_t size = L3_LLI_getSize();
                 
                 if(dataPtr[1] == '1' && L3_timer_getTimerStatus()==1) {
                     main_state = L3STATE_COMMUNICATE;
@@ -122,7 +122,7 @@ void L3_FSMrun(void)
                 //msg header setting
                 //L3_msg_encodeData(sdu,originalWord,2); 
                 L3_msg_encodeMessage(sdu,originalWord,2); //send message
-                L3_LLI_dataReqFunc(sdu,sizeof(sdu)/sizeof(char));            
+                L3_LLI_dataReqFunc(sdu,sizeof(sdu)/sizeof(uint8_t));            
                 wordLen = 0;
                 // msg reset
                 for(int i=0; i< wordLen+1;i++){
@@ -139,7 +139,7 @@ void L3_FSMrun(void)
             // request release
             if(L3_event_checkEventFlag(L3_event_msgEnd)){
                 L3_msg_encodeData(sdu,3); //send release request
-                L3_LLI_dataReqFunc(sdu,sizeof(sdu)/sizeof(char));
+                L3_LLI_dataReqFunc(sdu,sizeof(sdu)/sizeof(uint8_t));
                 msg_count=0; //message count>=10 -> release
                 L3_event_clearEventFlag(L3_event_msgEnd);
                 main_state = L3STATE_IDLE;
@@ -152,9 +152,10 @@ void L3_FSMrun(void)
                 main_state = L3STATE_IDLE;
 
             }
-
-        default :
             break;
+
+        // default :
+            // break;
     }
 }
 

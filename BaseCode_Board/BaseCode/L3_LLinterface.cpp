@@ -4,20 +4,20 @@
 #include "protocol_parameters.h"
 #include "time.h"
 
-static char rcvdMsg[L3_MAXDATASIZE];
-static char rcvdSize;
+static uint8_t rcvdMsg[L3_MAXDATASIZE];
+static uint8_t rcvdSize;
 static int16_t rcvdRssi; //type: short
-static char rcvdSnr;
+static uint8_t rcvdSnr;
 
 //TX function
-void (*L3_LLI_dataReqFunc)(char* msg, char size);
+void (*L3_LLI_dataReqFunc)(uint8_t* msg, uint8_t size);
 //configFunction
-int (*L3_LLI_configReqFunc)(char type, char value);
+int (*L3_LLI_configReqFunc)(uint8_t type, uint8_t value);
 
 //interface event : DATA_IND, RX data has arrived
-void L3_LLI_dataInd(char* dataPtr, char size, char snr, int16_t rssi)
+void L3_LLI_dataInd(uint8_t* dataPtr, uint8_t size, int8_t snr, int16_t rssi)
 {
-    memcpy(rcvdMsg, dataPtr, size*sizeof(char));
+    memcpy(rcvdMsg, dataPtr, size*sizeof(uint8_t));
     rcvdSize = size;
     rcvdSnr = snr;
     rcvdRssi = rssi;
@@ -25,21 +25,21 @@ void L3_LLI_dataInd(char* dataPtr, char size, char snr, int16_t rssi)
     L3_event_setEventFlag(L3_event_resRcvd);
 }
 
-char* L3_LLI_getMsgPtr()
+uint8_t* L3_LLI_getMsgPtr()
 {
     return rcvdMsg;
 }
-char L3_LLI_getSize()
+uint8_t L3_LLI_getSize()
 {
     return rcvdSize;
 }
 
-void L3_LLI_setDataReqFunc(void (*funcPtr)(char*, char))
+void L3_LLI_setDataReqFunc(void (*funcPtr)(uint8_t*, uint8_t))
 {
     L3_LLI_dataReqFunc = funcPtr;
 }
 
-void L3_LLI_setConfigReqFunc(int (*funcPtr)(char, char))
+void L3_LLI_setConfigReqFunc(int (*funcPtr)(uint8_t, uint8_t))
 {
     L3_LLI_configReqFunc = funcPtr;
 }
