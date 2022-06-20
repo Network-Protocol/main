@@ -17,10 +17,10 @@ static uint8_t main_state = L3STATE_IDLE; //protocol state
 static uint8_t prev_state = main_state;
 
 //SDU (input)
-static uint8_t originalWord[200];
+static uint8_t originalWord[20];
 static int wordLen=0;
 
-static uint8_t sdu[200];
+static uint8_t sdu[20];
 
 //serial port interface
 static Serial pc(USBTX, USBRX);
@@ -67,6 +67,7 @@ void L3_FSMrun(void)
     {
         prev_state = main_state;
     }
+    L3_event_checkEventFlag(L3_event_reqToSend);
 
     //FSM should be implemented here! ---->>>>
     switch (main_state)
@@ -88,8 +89,11 @@ void L3_FSMrun(void)
                 L3_timer_startTimer(); //wait Arb's res
                 main_state = L3STATE_CONNECT;
                 L3_event_clearEventFlag(L3_event_reqToSend); 
+                L3_event_setEventFlag(L3_event_resRcvd);
+                break;
             }
-            break;
+            
+            else break;
 
         
         case L3STATE_CONNECT: //IDLE state description
@@ -109,6 +113,7 @@ void L3_FSMrun(void)
                 }
                                         
                 L3_event_clearEventFlag(L3_event_resRcvd); 
+                L3_event_setEventFlag(L3_event_msgToSend);
                 
             } 
             break;
@@ -130,6 +135,7 @@ void L3_FSMrun(void)
                 }
                 msg_count++;
                 L3_event_clearEventFlag(L3_event_msgToSend);
+                L3_event_setEventFlag(L3_event_msgToSend);
                 if(msg_count >=10) L3_event_setEventFlag(L3_event_msgEnd);
                 
                 main_state = L3STATE_COMMUNICATE;
@@ -137,18 +143,20 @@ void L3_FSMrun(void)
             }
 
             // request release
-            if(L3_event_checkEventFlag(L3_event_msgEnd)){
+            else if(L3_event_checkEventFlag(L3_event_msgEnd)){
                 L3_msg_encodeData(sdu,3); //send release request
                 L3_LLI_dataReqFunc(sdu,sizeof(sdu)/sizeof(uint8_t));
                 msg_count=0; //message count>=10 -> release
                 L3_event_clearEventFlag(L3_event_msgEnd);
+                L3_event_setEventFlag(L3_event_reqToSend);
                 main_state = L3STATE_IDLE;
 
             }
 
-            if(L3_event_checkEventFlag(L3_event_rls_req)){
+            else if(L3_event_checkEventFlag(L3_event_rls_req)){
                 msg_count =0;
                 L3_event_clearEventFlag(L3_event_rls_req);
+                L3_event_setEventFlag(L3_event_reqToSend);
                 main_state = L3STATE_IDLE;
 
             }

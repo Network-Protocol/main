@@ -19,7 +19,7 @@ static uint8_t prev_state = main_state;
 // static uint8_t originalWord[200];
 // static uint8_t wordLen=0;
 
-static uint8_t sdu[200];
+static uint8_t sdu[20];
 
 //serial port interface
 static Serial pc(USBTX, USBRX);
@@ -71,7 +71,7 @@ void L3_FSMrun(void)
                 L3_LLI_dataReqFunc(sdu, sizeof(sdu)/sizeof(uint8_t));
                 main_state = L3STATE_COMMUNICATE;
             }
-            if (L3_event_checkEventFlag(L3_event_MsgRcvd)){
+            else if (L3_event_checkEventFlag(L3_event_MsgRcvd)){
                 uint8_t* _msg;
                 memcpy(_msg, &dataPtr[L3_MSG_OFFSET_DATA], (size-1)*sizeof(uint8_t));
                 L3_msg_encodeMessage(sdu,_msg,2);//send message
@@ -79,13 +79,13 @@ void L3_FSMrun(void)
 
                 main_state = L3STATE_COMMUNICATE; //arb release
             }
-            if(L3_event_checkEventFlag(L3_event_RlsRcvd)) { // MSG_TYPE_RLS_REQ && L3_event_RLSRcvd
+            else if(L3_event_checkEventFlag(L3_event_RlsRcvd)) { // MSG_TYPE_RLS_REQ && L3_event_RLSRcvd
                 L3_msg_encodeData(sdu,4); //type-> MSG_TYPE_QUA_RLS==4
                 L3_LLI_dataReqFunc(sdu, sizeof(sdu)/sizeof(uint8_t));
                 L3_event_clearEventFlag(L3_event_RlsRcvd);
                 main_state = L3STATE_IDLE;
             }
-            if(L3_event_checkEventFlag(L3_event_Timeout)){
+            else if(L3_event_checkEventFlag(L3_event_Timeout)){
                 L3_msg_encodeData(sdu,5); //type-> MSG_TYPE_TIME_OUT==5
                 L3_LLI_dataReqFunc(sdu, sizeof(sdu)/sizeof(uint8_t));
                 L3_event_clearEventFlag(L3_event_Timeout);
